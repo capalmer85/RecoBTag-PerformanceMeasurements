@@ -3,7 +3,7 @@ import os,sys
 import json
 import commands
 import ROOT
-from SimGeneral.MixingModule.mix_2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU_cfi import *
+from SimGeneral.MixingModule.mix_2017_25ns_WinterMC_PUScenarioV1_PoissonOOTPU_cfi import *
 
 """
 steer the script
@@ -13,8 +13,9 @@ def main():
     #configuration
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
-    parser.add_option('--json',      dest='inJson'  ,      help='json file with processed runs',      default=None,    type='string')
-    parser.add_option('--mbXsec',    dest='mbXsec'  ,      help='minimum bias cross section to use',  default=69000,   type=float)
+    parser.add_option('--json',      dest='inJson'  ,      help='json file with processed runs',          default=None,    type='string')
+    parser.add_option('--mbXsec',    dest='mbXsec'  ,      help='minimum bias cross section to use',      default=69200,   type=float)
+    parser.add_option('--mbXsecUnc', dest='mbXsecUnc'  ,   help='minimum bias cross section uncertainty', default=0.046,   type=float)
     parser.add_option('--puJson',    dest='puJson'  ,      help='pileup json file',      
                       default='/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt',    type='string')
     (opt, args) = parser.parse_args()
@@ -30,7 +31,7 @@ def main():
     #compute pileup in data assuming different xsec
     puDist=[]
     puWgts=[]
-    MINBIASXSEC={'nom':opt.mbXsec,'up':opt.mbXsec*1.1,'down':opt.mbXsec*0.9}
+    MINBIASXSEC={'nom':opt.mbXsec,'up':opt.mbXsec*(1.+opt.mbXsecUnc),'down':opt.mbXsec*(1.-opt.mbXsecUnc)}
     for scenario in MINBIASXSEC:
         print scenario, 'xsec=',MINBIASXSEC[scenario]
         cmd='pileupCalc.py -i %s --inputLumiJSON %s --calcMode true --minBiasXsec %f --maxPileupBin %d --numPileupBins %s Pileup.root'%(opt.inJson,opt.puJson,MINBIASXSEC[scenario],NPUBINS,NPUBINS)
