@@ -38,18 +38,9 @@ class TTbarEventAnalysis
 	jecUnc_ = new JetCorrectionUncertainty(jecUncUrl.Data());
 
 	//pileup weights
-	TString puWgtUrl("${CMSSW_BASE}/src/RecoBTag/PerformanceMeasurements/test/ttbar/data/pileupWgts.root");
-	gSystem->ExpandPathName(puWgtUrl);
-	TFile *fIn=TFile::Open(puWgtUrl);
-	if(fIn){
-	  puWgtGr_     = (TGraph *)fIn->Get("puwgts_nom");
-	  puWgtDownGr_ = (TGraph *)fIn->Get("puwgts_down");
-	  puWgtUpGr_   = (TGraph *)fIn->Get("puwgts_up");
-	  fIn->Close();
-	}
-	else{
-	  std::cout << "Unable to find data/pileupWgts.root, no PU reweighting will be applied" << std::endl;
-	}
+	TString stdTarget("${CMSSW_BASE}/src/RecoBTag/PerformanceMeasurements/test/ttbar/data/pileupWgts.root");
+	gSystem->ExpandPathName(stdTarget);
+	SetPUWeightTarget(stdTarget,"");
       }
   ~TTbarEventAnalysis(){}
   void setReadTTJetsGenWeights(bool readTTJetsGenWeights)     { readTTJetsGenWeights_=readTTJetsGenWeights; }
@@ -59,6 +50,28 @@ class TTbarEventAnalysis
   void prepareOutput(TString outFile);
   void processFile(TString inFile,TH1F *xsecWgt,Bool_t isData);
   void finalizeOutput();
+	void SetPUWeightTarget(TString targetFile,TString sampleName){
+      TFile *fIn=TFile::Open(targetFile);
+	    if(fIn){
+        std::string nom( "puwgts_nom");  
+        std::string up(  "puwgts_down");
+        std::string down("puwgts_up");
+        if(!sampleName.IsNull()){
+            nom.append("_");
+            nom.append(sampleName);
+            up.append("_");
+            up.append(sampleName);
+            down.append("_");
+            down.append(sampleName);
+        }
+	      puWgtGr_     = (TGraph *)fIn->Get(nom.c_str());
+	      puWgtDownGr_ = (TGraph *)fIn->Get(down.c_str());
+	      puWgtUpGr_   = (TGraph *)fIn->Get(up.c_str());
+	    }else{
+	      std::cout << "Unable to find data/pileupWgts.root, no PU reweighting will be applied" << std::endl;
+	    }
+	    fIn->Close();
+	}
 
  private:
   JetCorrectionUncertainty *jecUnc_;

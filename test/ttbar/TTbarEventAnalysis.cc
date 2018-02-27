@@ -160,10 +160,11 @@ void TTbarEventAnalysis::processFile(TString inFile,TH1F *xsecWgt,Bool_t isData)
     Float_t ttbar_rho;
     Int_t   ttbar_nw;
     Float_t nPUtrue;
+    Int_t nPU;
     Float_t ttbar_w[500];
     Int_t nJet;
     Float_t Jet_pt[100],Jet_genpt[100],Jet_area[100],Jet_jes[100],Jet_eta[100],Jet_phi[100],Jet_mass[100];
-    Float_t Jet_Svx[100],Jet_CombIVF[100],Jet_Proba[100],Jet_Ip2P[100];
+    Float_t Jet_Svx[100],Jet_CombIVF[100],Jet_Proba[100],Jet_Ip2P[100],Jet_DeepCSVBDisc[100];
     Int_t Jet_nseltracks[100];
     Int_t Jet_flavour[100];
   };
@@ -173,6 +174,7 @@ void TTbarEventAnalysis::processFile(TString inFile,TH1F *xsecWgt,Bool_t isData)
   tree->SetBranchAddress("LumiBlock"  , &ev.LumiBlock  );
   tree->SetBranchAddress("nPV"        , &ev.nPV        );
   tree->SetBranchAddress("nPUtrue",     &ev.nPUtrue );
+    tree->SetBranchAddress("nPU",         &ev.nPU );
   tree->SetBranchAddress("ttbar_chan" , &ev.ttbar_chan);
   tree->SetBranchAddress("ttbar_metfilterWord", &ev.ttbar_metfilterWord);
   tree->SetBranchAddress("ttbar_trigWord", &ev.ttbar_trigWord);
@@ -199,6 +201,7 @@ void TTbarEventAnalysis::processFile(TString inFile,TH1F *xsecWgt,Bool_t isData)
   tree->SetBranchAddress("Jet_mass",        ev.Jet_mass);
   tree->SetBranchAddress("Jet_Svx",         ev.Jet_Svx);
   tree->SetBranchAddress("Jet_CombIVF",     ev.Jet_CombIVF);
+  tree->SetBranchAddress("Jet_DeepCSVBDisc",ev.Jet_DeepCSVBDisc);
   tree->SetBranchAddress("Jet_Proba",       ev.Jet_Proba);
   tree->SetBranchAddress("Jet_Ip2P",        ev.Jet_Ip2P);
   tree->SetBranchAddress("Jet_nseltracks",  ev.Jet_nseltracks);
@@ -226,9 +229,9 @@ void TTbarEventAnalysis::processFile(TString inFile,TH1F *xsecWgt,Bool_t isData)
       Float_t puWgtLo(1.0), puWgtNom(1.0), puWgtHi(1.0);
       if(!isData)
 	{
-	  if(puWgtGr_)     puWgtNom = puWgtGr_->Eval(ev.nPUtrue);
-	  if(puWgtDownGr_) puWgtLo  = puWgtDownGr_->Eval(ev.nPUtrue);
-	  if(puWgtUpGr_)   puWgtHi  = puWgtUpGr_->Eval(ev.nPUtrue);
+            if(puWgtGr_)     puWgtNom = puWgtGr_->Eval(ev.nPU);
+            if(puWgtDownGr_) puWgtLo  = puWgtDownGr_->Eval(ev.nPU);
+            if(puWgtUpGr_)   puWgtHi  = puWgtUpGr_->Eval(ev.nPU);
 	}
       histos_["puwgtnorm" ]->Fill(0.,1.0);
       histos_["puwgtnorm" ]->Fill(1.,puWgtNom);

@@ -18,6 +18,10 @@ def runTTbarAnalysis(inFile, outFile, wgt, tmvaWgts=None,isData=False):
 
     from ROOT import TTbarEventAnalysis
     evAnalysis=TTbarEventAnalysis()
+    if puTarget is not "" and not isData:
+        print "puTarget,isData,shortName",puTarget,isData,shortName
+        print type(puTarget),type(shortName)
+        evAnalysis.SetPUWeightTarget(puTarget,shortName)
 
     #MC specifics
     if 'TTJets' in inFile: evAnalysis.setReadTTJetsGenWeights(True)
@@ -50,9 +54,9 @@ def runTTbarAnalysis(inFile, outFile, wgt, tmvaWgts=None,isData=False):
 Wrapper to be used when run in parallel
 """
 def runTTbarAnalysisPacked(args):
-    inFile, outFile, wgt, tmvaWgts,isData = args
+    inFile, outFile, wgt, tmvaWgts, isData, puTarget, shortName = args
     try:
-        return runTTbarAnalysis(inFile=inFile, outFile=outFile, wgt=wgt, tmvaWgts=tmvaWgts,isData=isData)
+        return runTTbarAnalysis(inFile=inFile, outFile=outFile, wgt=wgt, tmvaWgts=tmvaWgts,isData=isData, puTarget=puTarget, shortName=shortName)
     except :
         print 50*'<'
         print "  Problem  (%s) with %s continuing without"%(sys.exc_info()[1],inFile)
@@ -75,6 +79,7 @@ def main():
     parser.add_option(      '--tmvaWgts',    dest='tmvaWgts',    help='tmva weights',                 default=None,        type='string')
     parser.add_option(      '--dyScale',     dest='dyScale',     help='DY scale factor',              default=None,        type='string')
     parser.add_option('-n', '--njobs',       dest='njobs',       help='# jobs to run in parallel',    default=0,           type='int')
+    parser.add_option('--putarget',          dest='putarget',    help='new pu target if not standard',default="",          type='string')
     (opt, args) = parser.parse_args()
 
     #compile c++ wrapper to run over trees 
@@ -127,8 +132,15 @@ def main():
     #create the analysis jobs
     runTags = []
     task_list = []
-    for tag,sample in samplesList:
 
+    for tag,sample in samplesList:
+        try:
+            shortName=tag.split("crab_")[1].split("/")[0]
+        except:
+            print "short name doesn't work"
+            shortName=""
+        shortName=str(shortName)
+        print shortName
         #check if in list
         if len(onlyList)>0:
             veto=True
@@ -140,16 +152,21 @@ def main():
         input_list=getEOSlslist(directory=opt.inDir+'/'+tag)
         wgt = xsecWgts[tag]
         for nf in xrange(0,len(input_list)) : 
+            if not os.path.isdir(opt.outDir+"/"+tag): 
+                os.makedirs(opt.outDir+"/"+tag)
             outF='%s/%s_%d.root'%(opt.outDir,tag,nf)
-            task_list.append( (input_list[nf], outF, wgt, opt.tmvaWgts, sample[1]) )
+            task_list.append( (input_list[nf], outF, wgt, opt.tmvaWgts, sample[1], opt.putarget,shortName) )
 
     task_list=list(set(task_list))
     print '%s jobs to run in %d parallel threads' % (len(task_list), opt.njobs)
 
     #run the analysis jobs
     if opt.njobs == 0:
-        for inFile, outFile,wgt, tmvaWgts,isData in task_list: 
-            runTTbarAnalysis(inFile=inFile, outFile=outFile, wgt=wgt, tmvaWgts=tmvaWgts, isData=isData)
+        iJob=1
+        for inFile, outFile,wgt, tmvaWgts, isData, puTarget, shortName in task_list: 
+            print "JOB NUMBER:  ",iJob,"inFile, outFile,wgt, tmvaWgts,isData,",inFile, outFile,wgt, tmvaWgts,isData, puTarget, shortName
+            runTTbarAnalysis(inFile=inFile, outFile=outFile, wgt=wgt, tmvaWgts=tmvaWgts, isData=isData, puTarget=puTarget, shortName=shortName)
+            iJob=iJob+1
     else:
         from multiprocessing import Pool
         pool = Pool(opt.njobs)
